@@ -60,7 +60,7 @@ Data型的构件POS，对外提供`subprogram access`型的接口。
 	spgRead   : subprogram Read_POS; 
 	
 
-![image](./suppl/Pos.Impl.jpg)
+![image](./suppl/POS.Impl.jpg)
 
 3）Update和Read子程序
 -------------
