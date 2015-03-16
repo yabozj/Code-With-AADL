@@ -48,16 +48,34 @@ Welcome -> TMTC_Job -> Update -> Bye
 -------------
 
 
-Data型的构件POS，对外提供`subprogram access`型的接口。
+Data型的构件POS，是整个系统数据的持有者，对外提供`subprogram access`型的接口。
 
 - Update
 - Read
 
-其内部包含3个子构件：
+其内部包含3个子构件。
 
-	Field : data POS_Internal_Type;
-	spgUpdate : subprogram Update;
-	spgRead   : subprogram Read_POS; 
+	data POS
+	features
+	  Update : provides subprogram access Update;
+	  Read   : provides subprogram access Read_POS;
+	properties
+	  Priority => 250;
+	end POS;
+	
+	data implementation POS.Impl
+	subcomponents
+	  Field : data POS_Internal_Type;
+	  spgUpdate : subprogram Update;
+	  spgRead   : subprogram Read_POS; 
+	
+	connections
+	  Cnx_Pos_1 : subprogram access SpgUpdate -> Update;
+	  Cnx_Pos_2 : subprogram access SpgRead -> Read;
+	
+	properties
+	  Data_Model::Data_Representation => Struct;
+	end POS.Impl;
 	
 
 ![image](./suppl/POS.Impl.jpg)
@@ -66,7 +84,7 @@ Data型的构件POS，对外提供`subprogram access`型的接口。
 -------------
 
 
-特别需注意的是子程序Update和Read子程序构件的定义。
+特别需注意的是子程序Update和Read子程序构件的定义。它们都有`this: requires data access POS.Impl`的接口申明。
 
 	subprogram Update
 	features
@@ -75,7 +93,7 @@ Data型的构件POS，对外提供`subprogram access`型的接口。
 	  source_language => C;
 	  source_name     => "user_update";
 	  source_text     => ("toy.c");
-	end Update;
+	end Update;		
 
 
 4）GNC相关的子程序
@@ -127,9 +145,32 @@ GNC_Thread是thread型的组件，作为GNC任务的被调度的对象。它的�
 
 
 
-
-预期运行结果
+3、预期运行结果
 ===========
 GNC和TMTC交错执行，打印信息，POS值递增。
+
+4、分析
+===========
+
+该实例使用了AADL的“建模面向对象的方法调用”特性，可参见《使用AADL的模型基工程》
+
+使用该特性，需要以下几个步骤：
+
+- 声明Data类型，在其内部包含某subprogram以及内部数据的存放对象，对外声明`provides subprogram access subp1 subp2 ... `，并把该子程序访问接口与内部子程序相连接。
+- 在上述subp1, subp2的具体子程序中，对外声明`this : requires data access example_data`。
+- 在其他子程序或线程中
+	- 对外声明`sample_interface: requires data access example_data`
+	- 在内部调用子程序`ss1: subprogram example_data.subp1`, `ss2: example_data.subp2`, ...。
+	- 在连接中声明`data access sample_interface -> ss1.this`,`data access sample_interface -> ss2.this`, ...
+- 上述的`requires data access`可以一路被一层层向外扩展，被组件的母组件对外声明。
+
+>注意：
+
+> - 上述的this具有特殊的含义。
+> - 上述对外一层层扩展，使用的都是`requires data access`。
+> - 上述有`provides subprogram access`，但是并没有对应的`requires subprogram access`。
+
+
+END
 
 
