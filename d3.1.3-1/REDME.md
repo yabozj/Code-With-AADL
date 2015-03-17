@@ -169,6 +169,11 @@ GNC和TMTC交错执行，打印信息，POS值递增。
 > - 上述的this具有特殊的含义。
 > - 上述对外一层层扩展，使用的都是`requires data access`。
 > - 上述有`provides subprogram access`，但是并没有对应的`requires subprogram access`。
+> - 关于在连接中的端口指向问题
+>	- 如果是xx: requires yy，那么xx放在->之前，如GNC_Thread_Wrapper和TMTC_Thread_Wrapper。
+>	- 如果是xx: provides yy，那么xx放在->之后，如POS/POS.Impl。
+>	- 如果是把provides和requires的接口相连，那么provides在->之前，requires在->之后，如Toy_Example_Proc.Impl。
+
 
 
 END
