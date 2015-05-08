@@ -1,0 +1,189 @@
+package das
+public
+	with deployment;
+	with Data_Model;
+	
+	---------------
+	-- data      --
+	---------------
+	data value_t
+	properties
+		Data_Model::Data_RePresentation=>Integer;
+	end value_t;
+	
+	data sensor_data
+	features
+		get_value:provides subprogram access get_value;
+		set_value:provides subprogram access set_value;
+	end sensor_data;
+	
+	data implementation sensor_data.impl
+	subcomponents
+		data_value:data value_t;
+		s_get_value:subprogram get_value;
+		s_set_value:subprogram set_value;
+	connections
+		sa1:subprogram access s_get_value->get_value;
+		sa2:subprogram access s_set_value->set_value;
+	properties
+    		Data_Model::Data_Representation => Struct;
+	end sensor_data.impl;
+	
+	---------------
+	-- subprogram--
+	---------------
+	subprogram get_value
+	features		 		
+		data_out: out parameter value_t;   		
+		this:requires data access sensor_data.impl;
+
+	properties
+  		source_language => (C);
+  		source_name     => "get_value";
+  		source_text     => ("das.c");
+	end get_value;
+	
+	subprogram set_value
+	features
+    		this:requires data access sensor_data.impl;
+	properties
+  		source_language => (C);
+  		source_name     => "set_value";
+  		source_text     => ("das.c");
+	end set_value;
+
+	subprogram process_value
+	features
+		data_in : in parameter value_t;
+	properties
+  		source_language => (C);
+  		source_name     => "process_value";
+  		source_text     => ("das.c");
+	end process_value;
+
+	subprogram process_value2
+	features
+		data_in : in parameter value_t;
+	properties
+  		source_language => (C);
+  		source_name     => "process_value2";
+  		source_text     => ("das.c");
+	end process_value2;
+
+	
+	subprogram total
+	features
+		sensor_value : requires data access sensor_data.impl;
+	end total;
+	
+	subprogram implementation total.impl
+	calls
+		call_seq:{
+			set_value:subprogram sensor_data.set_value;
+			get_value:subprogram sensor_data.get_value;
+			process_value: subprogram process_value;
+		};
+	connections
+		da1: data access sensor_value->set_value.this;
+		da2: data access sensor_value->get_value.this;
+		da3: parameter get_value.data_out -> process_value.data_in;
+	end total.impl;
+
+	subprogram total2
+	features
+		sensor_value : requires data access sensor_data.impl;
+	end total2;
+
+	subprogram implementation total2.impl
+	calls
+		call_seq:{
+			get_value:subprogram sensor_data.get_value;
+			process_value: subprogram process_value2;
+		};
+	connections
+		da2: data access sensor_value->get_value.this;
+		da3: parameter get_value.data_out -> process_value.data_in;
+	end total2.impl;
+	
+	---------------
+	-- thread    --
+	---------------
+	thread das_user
+	features
+		sensor_value:requires data access sensor_data.impl;
+	end das_user;
+	
+	thread implementation das_user.impl
+	calls
+	call_seq:{
+		total:subprogram total.impl;
+	};
+	connections
+		da:data access sensor_value->total.sensor_value;
+	properties
+    	Dispatch_Protocol                  => periodic;
+    	Period                             => 1000ms;
+	end das_user.impl;
+
+
+	thread das_user2
+	features
+		sensor_value:requires data access sensor_data.impl;
+	end das_user2;
+	
+	thread implementation das_user2.impl
+	calls
+	call_seq:{
+		total2: subprogram total2.impl;
+	};
+	connections
+		da:data access sensor_value->total2.sensor_value;
+	properties
+    	Dispatch_Protocol                  => periodic;
+    	Period                             => 500ms;
+	end das_user2.impl;
+	
+	---------------
+	-- process   --
+	---------------
+	process node_a
+	end node_a;
+	
+	process implementation node_a.impl
+	subcomponents
+		das_user:thread das_user.impl;
+		das_user2:thread das_user2.impl;
+		sensor_data:data sensor_data.impl;
+	connections
+		da:data access sensor_data->das_user.sensor_value;
+		da2:data access sensor_data->das_user2.sensor_value;
+	end node_a.impl;
+	
+	---------------
+	-- processor --
+	---------------
+	processor x86 
+    properties 
+    	Deployment::Execution_Platform => Native; 
+    end x86; 
+ 
+    processor implementation x86.linux 
+    properties 
+     	Deployment::Execution_Platform => Native; 
+	end x86.linux;
+
+	---------------
+	-- system   --
+	---------------
+	system das
+	end das;
+	
+	system implementation das.impl
+	subcomponents
+		node_a:process node_a.impl;
+		cpu_x86_linux:processor x86.linux;
+	properties
+		Actual_Processor_Binding => (reference (cpu_x86_linux)) applies to node_a;
+	end das.impl;
+
+end das;
