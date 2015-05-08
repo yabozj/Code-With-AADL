@@ -1,0 +1,53 @@
+--  This AADL model completes the prime numbers example by adding
+--  deployment information.
+--
+--  In this deployment, only one node is defined.
+--
+--  $Id: pn-local.aadl 6752 2009-07-01 16:36:45Z lasnier $
+
+package PN::Local
+public
+  with Deployment, Software;
+
+---------------
+-- Processor --
+---------------
+
+processor the_processor
+properties
+  Deployment::Execution_Platform => native;
+end the_processor;
+
+processor implementation the_processor.Impl
+end the_processor.Impl;
+
+---------------
+-- Processes --
+---------------
+
+process A
+end A;
+
+process implementation A.Impl
+subcomponents
+  Finder         : thread Software::ISR.impl;
+end A.Impl;
+
+------------
+-- System --
+------------
+
+system ISR_DEMO
+end ISR_DEMO;
+
+system implementation ISR_DEMO.Impl
+subcomponents
+  Node_A : process A.Impl;
+
+  CPU : processor the_processor.Impl
+   {Priority_Range => 0 .. 255;};
+properties
+  actual_processor_binding => reference (CPU) applies to Node_A;
+end ISR_DEMO.Impl;
+
+end PN::Local;

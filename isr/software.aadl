@@ -1,0 +1,40 @@
+--  This AADL model illustrates how to model an use AADL hybrid threads
+--
+--  $Id: software.aadl 6273 2009-03-25 17:36:51Z lasnier $
+
+package Software
+public
+
+with Deployment;
+with Data_Model;
+-------------
+-- Threads --
+-------------
+
+subprogram Do
+end Do;
+
+subprogram implementation Do.Impl
+properties
+  source_language => (Ada95);
+  source_name     => "Ping.Sig";
+end Do.Impl;
+
+thread ISR
+end ISR;
+
+thread implementation ISR.impl
+calls Mycalls : {
+	  P_Spg : subprogram Do.Impl;
+	};
+properties
+  Dispatch_Protocol => Interrupt;
+  Deployment::Configuration => "SIGUSR1";
+  --Deployment::Configuration => "SIGTERM";
+  --Compute_Entrypoint_Source_Text => "Ping.Sig"; 
+  --Activate_Entrypoint_Source_Text  => "Ping.Sig"; 
+  Priority => 10;
+  Period => 100ms;
+end ISR.impl;
+
+end Software;
